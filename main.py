@@ -1,5 +1,6 @@
 import numpy as np
 from skimage.io import imread, imsave
+from helper import parse_img, parse_labels
 
 
 class Neuro:
@@ -11,32 +12,6 @@ class Neuro:
             self.weights = self.get_weights(from_file=True)
         else:
             self.weights = self.get_weights(from_file=False)
-
-    # Возвращает список ожидаемых результатов
-    @staticmethod
-    def parse_labels(filename):
-        with open(filename, 'rb') as f:
-            text = f.read()
-            barr = bytearray(text)
-            array = []
-            for byte in barr[8:]:
-                array.append(byte)
-            return np.array(array)
-
-    # Возвращает матрицу картинок
-    # Картинка это одномерный список, с которым при этом работать нужно как с двумерным
-    @staticmethod
-    def parse_img(filename, num_of_imgs):
-        with open(filename, 'rb') as f:
-            text = f.read()
-            barr = bytearray(text)[16:]
-            array = []
-            for z in range(num_of_imgs):
-                array.append([])
-                for i in range(28):
-                    for k in range(28):
-                        array[z].append(barr[784 * z + i * 28 + k])
-            return np.array(array)
 
     def write_weigths_to_file(self):
         with open(self.filename, 'w') as f:
@@ -67,8 +42,8 @@ class Neuro:
 
     def learn(self, iterations):
         # Получам пикчи и ожидаемые результаты
-        array_imgs = self.parse_img('train-images-idx3-ubyte', 60000)
-        expected = self.parse_labels('train-labels-idx1-ubyte')
+        array_imgs = parse_img('train-images-idx3-ubyte', 60000)
+        expected = parse_labels('train-labels-idx1-ubyte')
         for something in range(iterations):
             for index, img in enumerate(array_imgs):
                 # Результат это вектор 1 10 в котором написана вероятность появления каждой из цифр
@@ -89,8 +64,8 @@ class Neuro:
 
     def my_learn(self, iterations):
         # Получам пикчи и ожидаемые результаты
-        array_imgs = self.parse_img('train-images-idx3-ubyte', 60000)
-        expected = self.parse_labels('train-labels-idx1-ubyte')
+        array_imgs = parse_img('train-images-idx3-ubyte', 60000)
+        expected = parse_labels('train-labels-idx1-ubyte')
         for something in range(iterations):
             for index, img in enumerate(array_imgs):
                 exp = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
@@ -171,8 +146,8 @@ class Neuro:
 
     # Предсказывает из мниста
     def predict_by_mnist(self):
-        array_imgs = self.parse_img('t10k-images-idx3-ubyte', 10000)
-        expected = self.parse_labels('t10k-labels-idx1-ubyte')
+        array_imgs = parse_img('t10k-images-idx3-ubyte', 10000)
+        expected = parse_labels('t10k-labels-idx1-ubyte')
         error = 0
         for i, img in enumerate(array_imgs):
             ind, m = self.predict(img)
