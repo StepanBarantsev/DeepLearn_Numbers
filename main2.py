@@ -1,6 +1,6 @@
 import numpy as np
 from skimage.io import imread, imsave
-from helper import parse_img, parse_labels
+from helper import parse_img, parse_labels, write_weigth_to_file, get_weight
 
 
 class Neuro2:
@@ -17,46 +17,48 @@ class Neuro2:
     def get_weights(self, from_file):
         if from_file:
             for i, filename in enumerate(self.filenames):
-                self.weights.append(self.get_weight(filename, self.shapes[i][0], self.shapes[i][1]))
+                self.weights.append(get_weight(filename, self.shapes[i][0], self.shapes[i][1]))
         else:
             for i in range(len(self.filenames)):
-                self.weights.append(self.get_weight(None, self.shapes[i][0], self.shapes[i][1]))
+                self.weights.append(get_weight(None, self.shapes[i][0], self.shapes[i][1]))
 
     def write_weights_to_file(self):
         for i in range(len(self.filenames)):
-            self.write_weigth_to_file(self.filenames[i], self.weights[i])
+            write_weigth_to_file(self.filenames[i], self.weights[i])
 
-    @staticmethod
-    def write_weigth_to_file(filename, weight):
-        with open(filename, 'w') as f:
-            weight = list(weight)
-            for i in range(len(weight)):
-                weight[i] = list(weight[i])
-                for k in range(len(weight[i])):
-                    weight[i][k] = str(weight[i][k])
-            print(weight)
-            weight = [' '.join(w) for w in weight]
-            weight = '\n'.join(weight)
-            f.write(weight)
-
-    @staticmethod
-    def get_weight(filename, r1, r2):
-        if filename is not None:
-            with open(filename, 'r') as f:
-                text = f.read()
-                text = text.split('\n')
-                weights = [i.split() for i in text]
-
-            for i in range(len(weights)):
-                for k in range(len(weights[i])):
-                    weights[i][k] = float(weights[i][k])
-
-            return np.array(weights)
-        else:
-            return np.random.random((r1, r2))
+    def learn(self, iterations):
+        # Получам пикчи и ожидаемые результаты
+        array_imgs = parse_img('train-images-idx3-ubyte', 60000)
+        expected = parse_labels('train-labels-idx1-ubyte')
+        for something in range(iterations):
+            for index, img in enumerate(array_imgs):
+                exp = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+                exp[expected[index]] += 1
+                alpha = 0.0000000001
+                layers = [np.array(img)]
+                for i in range(len(self.weights)):
+                    layers.append(np.array(layers[i].dot(self.weights[i])))
+                layers = np.array(layers)
+                final_res = layers[len(layers) - 1]
+                deltas = [(np.array(final_res - exp))]
+                # У нас должно в итоге быть 2 дельты. На 0 вес умножать не нужно. Поэтому -1
+                for i in range(len(self.weights) - 1):
+                    deltas.append(np.array(deltas[i].dot(self.weights[len(self.weights) - 1 - i].T)))
+                deltas = np.array(deltas)
+                for i in range(len(deltas) // 2):
+                    deltas[i], deltas[len(deltas) - 1 - i] = deltas[len(deltas) - 1 - i], deltas[i]
+                for i in range(len(self.weights)):
+                    # Надо делать матрицы иначе не работает транспонирование!
+                    deltas[i] = np.matrix(deltas[i])
+                    layers[i] = np.matrix(layers[i]).T
+                    self.weights[i] -= alpha * layers[i].dot(deltas[i])
+                    print(self.weights)
+            print('Итерация номер %s' % something)
+            self.write_weights_to_file()
 
 
 o = Neuro2(['w1.txt', 'w2.txt'], weights_from_file=False, shapes=[(28 * 28, 40), (40, 10)])
+o.learn(1)
 o.write_weights_to_file()
 
 

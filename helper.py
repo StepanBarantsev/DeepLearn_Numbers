@@ -24,3 +24,32 @@ def parse_img(filename, num_of_imgs):
                 for k in range(28):
                     array[z].append(barr[784 * z + i * 28 + k])
         return np.array(array)
+
+
+def write_weigth_to_file(filename, weight):
+    with open(filename, 'w') as f:
+        weight = list(weight)
+        for i in range(len(weight)):
+            weight[i] = list(weight[i])
+            for k in range(len(weight[i])):
+                weight[i][k] = str(weight[i][k])
+        print(weight)
+        weight = [' '.join(w) for w in weight]
+        weight = '\n'.join(weight)
+        f.write(weight)
+
+
+def get_weight(filename, r1, r2):
+    if filename is not None:
+        with open(filename, 'r') as f:
+            text = f.read()
+            text = text.split('\n')
+            weights = [i.split() for i in text]
+
+        for i in range(len(weights)):
+            for k in range(len(weights[i])):
+                weights[i][k] = float(weights[i][k])
+
+        return np.array(weights)
+    else:
+        return np.random.random((r1, r2))
