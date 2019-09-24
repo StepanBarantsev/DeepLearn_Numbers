@@ -48,18 +48,39 @@ class Neuro2:
                 for i in range(len(deltas) // 2):
                     deltas[i], deltas[len(deltas) - 1 - i] = deltas[len(deltas) - 1 - i], deltas[i]
                 for i in range(len(self.weights)):
-                    # Надо делать матрицы иначе не работает транспонирование!
-                    deltas[i] = np.matrix(deltas[i])
-                    layers[i] = np.matrix(layers[i]).T
-                    self.weights[i] -= alpha * layers[i].dot(deltas[i])
-                    print(self.weights)
+                    self.weights[i] -= alpha * np.matrix(layers[i]).T.dot(np.matrix(deltas[i]))
             print('Итерация номер %s' % something)
             self.write_weights_to_file()
 
+    def predict(self, img):
+        result = img.dot(self.weights[0])
+        for i in range(1, len(self.weights)):
+            result = result.dot(self.weights[i])
+        m = result[0]
+        ind = 0
+        for i, res in enumerate(result):
+            if res > m:
+                m = res
+                ind = i
+        return ind, m
 
-o = Neuro2(['w1.txt', 'w2.txt'], weights_from_file=False, shapes=[(28 * 28, 40), (40, 10)])
+    def predict_by_mnist(self):
+        array_imgs = parse_img('t10k-images-idx3-ubyte', 10000)
+        expected = parse_labels('t10k-labels-idx1-ubyte')
+        error = 0
+        for i, img in enumerate(array_imgs):
+            ind, m = self.predict(img)
+            print('Число на картинке это %s. На самом деле %s' % (ind, expected[i]))
+            if ind != expected[i]:
+                error += 1
+        print('Количество ошибок %s' % error)
+        print('Всего чисел было %s' % len(expected))
+
+
+# o = Neuro2(['w1.txt', 'w2.txt'], weights_from_file=False, shapes=[(28 * 28, 40), (40, 10)])
+o = Neuro2(['w1.txt'], weights_from_file=False, shapes=[(28 * 28, 10)])
 o.learn(1)
-o.write_weights_to_file()
+o.predict_by_mnist()
 
 
 
