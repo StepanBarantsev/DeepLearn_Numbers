@@ -53,12 +53,10 @@ class Neuro:
                 exp[expected[index]] += 1
                 #  Получаем 10 ошибок разностей
                 alpha = 0.0000001
-                errors = (result - exp) * alpha
-                for index_pixel, pixel in enumerate(img):
-                    # Для каждого конкретного пикселя корректируем его вес
-                    # errors * pixel  -- сначала масштабируем
-                    # А потом вычитание вектора 1 10 - 1 10
-                    self.weights[index_pixel] -= errors * pixel
+                errors = np.matrix((result - exp) * alpha)
+                # Этот подход работает! Значит есть возможность обобщения на n, нужно только понять как
+                img = np.matrix(img).T
+                self.weights -= img.dot(errors)
             print('Итерация номер %s' % something)
             self.write_weigths_to_file()
 
@@ -157,5 +155,5 @@ class Neuro:
         print('Количество ошибок %s' % error)
         print('Всего чисел было %s' % len(expected))
 
-
-
+o = Neuro('f.txt', True)
+o.predict_by_mnist()
