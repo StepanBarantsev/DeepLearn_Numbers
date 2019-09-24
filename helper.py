@@ -52,4 +52,7 @@ def get_weight(filename, r1, r2):
 
         return np.array(weights)
     else:
-        return np.random.random((r1, r2))
+        # Это плохо, но нам нужны детерменированные веса!
+        return np.array([[0.0 for i in range(r1)] for k in range(r2)])
+        # Тут надо настроить чтобы рандомились небольшие числа. Иначе корректировки просто их не могут победить
+        # return np.random.random((r1, r2))
